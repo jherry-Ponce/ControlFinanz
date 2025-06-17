@@ -1,0 +1,144 @@
+---
+import { formatCurrency } from '../utils/currency';
+import type { FinancialProfile, AdvisorRecommendation } from '../types/financial';
+
+interface Props {
+  profile: FinancialProfile;
+  recommendations: AdvisorRecommendation[];
+}
+
+const { profile, recommendations } = Astro.props;
+
+const priorityColors = {
+  high: 'border-l-4 border-danger-500 bg-danger-50',
+  medium: 'border-l-4 border-warning-500 bg-warning-50',
+  low: 'border-l-4 border-success-500 bg-success-50'
+};
+
+const categoryIcons = {
+  savings: '💰',
+  debt: '💳',
+  investment: '📈',
+  emergency: '🚨',
+  lifestyle: '🎯',
+  optimization: '⚡'
+};
+---
+
+<div class="bg-white rounded-xl border border-gray-200 p-6">
+  <div class="flex items-center mb-6">
+    <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center mr-3">
+      <span class="text-2xl">🤖</span>
+    </div>
+    <div>
+      <h3 class="text-lg font-semibold text-gray-900">Asesor Financiero IA</h3>
+      <p class="text-sm text-gray-600">Análisis personalizado de tu situación financiera</p>
+    </div>
+  </div>
+
+  <!-- Resumen del Perfil -->
+  <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+    <h4 class="font-medium text-gray-900 mb-3">Tu Perfil Financiero</h4>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+      <div>
+        <p class="text-gray-600">Ingresos totales</p>
+        <p class="font-semibold">{formatCurrency(profile.totalIncome)}</p>
+      </div>
+      <div>
+        <p class="text-gray-600">Gastos fijos</p>
+        <p class="font-semibold text-danger-600">{formatCurrency(profile.fixedExpenses)}</p>
+      </div>
+      <div>
+        <p class="text-gray-600">Disponible</p>
+        <p class="font-semibold text-success-600">{formatCurrency(profile.availableAmount)}</p>
+      </div>
+      <div>
+        <p class="text-gray-600">Perfil de riesgo</p>
+        <p class="font-semibold capitalize">{profile.riskProfile}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recomendaciones -->
+  <div class="space-y-4">
+    <h4 class="font-medium text-gray-900">Recomendaciones Personalizadas</h4>
+    
+    {recommendations.map((rec) => (
+      <div class={`p-4 rounded-lg ${priorityColors[rec.priority]}`}>
+        <div class="flex items-start space-x-3">
+          <span class="text-2xl">{categoryIcons[rec.category]}</span>
+          <div class="flex-1">
+            <div class="flex justify-between items-start mb-2">
+              <h5 class="font-medium text-gray-900">{rec.title}</h5>
+              <span class={`px-2 py-1 text-xs font-medium rounded-full ${
+                rec.priority === 'high' ? 'bg-danger-100 text-danger-800' :
+                rec.priority === 'medium' ? 'bg-warning-100 text-warning-800' :
+                'bg-success-100 text-success-800'
+              }`}>
+                {rec.priority === 'high' ? 'Alta' : rec.priority === 'medium' ? 'Media' : 'Baja'} Prioridad
+              </span>
+            </div>
+            <p class="text-sm text-gray-700 mb-3">{rec.description}</p>
+            
+            {rec.suggestedAmount && (
+              <div class="flex items-center space-x-4 mb-3">
+                <div class="bg-white px-3 py-2 rounded-lg border">
+                  <p class="text-xs text-gray-600">Monto sugerido</p>
+                  <p class="font-semibold text-primary-600">{formatCurrency(rec.suggestedAmount)}</p>
+                </div>
+                {rec.timeframe && (
+                  <div class="bg-white px-3 py-2 rounded-lg border">
+                    <p class="text-xs text-gray-600">Plazo</p>
+                    <p class="font-semibold text-gray-900">{rec.timeframe}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {rec.actionSteps && rec.actionSteps.length > 0 && (
+              <div>
+                <p class="text-xs font-medium text-gray-600 mb-2">Pasos a seguir:</p>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  {rec.actionSteps.map((step, index) => (
+                    <li class="flex items-start">
+                      <span class="text-primary-600 mr-2">{index + 1}.</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <!-- Distribución Sugerida -->
+  <div class="mt-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
+    <h4 class="font-medium text-primary-900 mb-3">Distribución Sugerida del Dinero Disponible</h4>
+    <div class="space-y-2">
+      {recommendations
+        .filter(rec => rec.suggestedAmount)
+        .map((rec) => {
+          const percentage = ((rec.suggestedAmount! / profile.availableAmount) * 100);
+          return (
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-primary-800">{rec.title}</span>
+              <div class="flex items-center space-x-2">
+                <div class="w-24 bg-primary-200 rounded-full h-2">
+                  <div 
+                    class="bg-primary-600 h-2 rounded-full"
+                    style={`width: ${Math.min(percentage, 100)}%`}
+                  ></div>
+                </div>
+                <span class="text-sm font-medium text-primary-900 w-16 text-right">
+                  {formatCurrency(rec.suggestedAmount!)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+    </div>
+  </div>
+</div>

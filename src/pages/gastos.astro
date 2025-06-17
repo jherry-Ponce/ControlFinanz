@@ -1,0 +1,158 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ExpenseTable from '../components/ExpenseTable.astro';
+import FinancialCard from '../components/FinancialCard.astro';
+import { mockExpenses } from '../data/mockData';
+import { calculateTotalExpenses, getExpensesByCategory } from '../utils/calculations';
+import { formatCurrency } from '../utils/currency';
+
+const totalExpenses = calculateTotalExpenses(mockExpenses);
+const expensesByCategory = getExpensesByCategory(mockExpenses);
+
+const categoryLabels = {
+  food: 'Alimentación',
+  transport: 'Transporte',
+  entertainment: 'Entretenimiento',
+  healthcare: 'Salud',
+  education: 'Educación',
+  utilities: 'Servicios',
+  debt: 'Deudas',
+  services: 'Servicios',
+  other: 'Otros'
+};
+
+const fixedExpenses = mockExpenses.filter(expense => expense.isFixed);
+const variableExpenses = mockExpenses.filter(expense => !expense.isFixed);
+const totalFixed = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+const totalVariable = variableExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+---
+
+<Layout title="Gastos - Control de Gastos">
+  <div class="space-y-6">
+    <!-- Título -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Gestión de Gastos</h1>
+        <p class="text-gray-600">Controla y analiza tus gastos mensuales</p>
+      </div>
+      <button class="bg-danger-600 hover:bg-danger-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+        + Nuevo Gasto
+      </button>
+    </div>
+
+    <!-- Resumen de Gastos -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <FinancialCard
+        title="Total Gastos"
+        amount={totalExpenses}
+        subtitle="Suma de todos los gastos"
+        icon='<path d="M20 12H4"/>'
+        colorScheme="danger"
+        trend="up"
+        trendValue="+3.1%"
+      />
+      
+      <FinancialCard
+        title="Gastos Fijos"
+        amount={totalFixed}
+        subtitle={`${((totalFixed / totalExpenses) * 100).toFixed(1)}% del total`}
+        icon='<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+        colorScheme="warning"
+      />
+      
+      <FinancialCard
+        title="Gastos Variables"
+        amount={totalVariable}
+        subtitle={`${((totalVariable / totalExpenses) * 100).toFixed(1)}% del total`}
+        icon='<path d="M13 10V3L4 14h7v7l9-11h-7z"/>'
+        colorScheme="primary"
+      />
+      
+      <FinancialCard
+        title="Promedio Diario"
+        amount={totalExpenses / 30}
+        subtitle="Gasto promedio por día"
+        icon='<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>'
+        colorScheme="primary"
+      />
+    </div>
+
+    <!-- Gastos por Categoría -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-6">Gastos por Categoría</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {Object.entries(expensesByCategory).map(([category, amount]) => (
+          <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p class="font-medium text-gray-900">{categoryLabels[category]}</p>
+              <p class="text-sm text-gray-600">{((amount / totalExpenses) * 100).toFixed(1)}% del total</p>
+            </div>
+            <p class="text-lg font-bold text-danger-600">{formatCurrency(amount)}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Tabla de Gastos -->
+    <ExpenseTable expenses={mockExpenses} showAll={true} />
+
+    <!-- Análisis de Tendencias -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Gastos Fijos vs Variables</h3>
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Gastos Fijos</span>
+              <span>{formatCurrency(totalFixed)}</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                class="bg-warning-500 h-3 rounded-full"
+                style={`width: ${(totalFixed / totalExpenses) * 100}%`}
+              ></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Gastos Variables</span>
+              <span>{formatCurrency(totalVariable)}</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                class="bg-primary-500 h-3 rounded-full"
+                style={`width: ${(totalVariable / totalExpenses) * 100}%`}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Métodos de Pago Más Usados</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Yape</span>
+            <span class="font-medium">35%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Tarjeta</span>
+            <span class="font-medium">28%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Efectivo</span>
+            <span class="font-medium">20%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Plin</span>
+            <span class="font-medium">12%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Transferencia</span>
+            <span class="font-medium">5%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

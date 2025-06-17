@@ -1,0 +1,305 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FinancialCard from '../components/FinancialCard.astro';
+import { mockIncomes, mockExpenses, mockSavingsGoals, mockDebts } from '../data/mockData';
+import { 
+  calculateTotalIncome, 
+  calculateTotalExpenses, 
+  calculateTotalSavings,
+  calculateBalance,
+  getExpensesByCategory,
+  getIncomesBySource
+} from '../utils/calculations';
+import { formatCurrency } from '../utils/currency';
+
+// Cálculos generales
+const totalIncome = calculateTotalIncome(mockIncomes);
+const totalExpenses = calculateTotalExpenses(mockExpenses);
+const totalSavings = calculateTotalSavings(mockSavingsGoals);
+const balance = calculateBalance(totalIncome, totalExpenses);
+const totalDebt = mockDebts.reduce((sum, debt) => sum + debt.remainingAmount, 0);
+
+// Análisis por categorías
+const expensesByCategory = getExpensesByCategory(mockExpenses);
+const incomesBySource = getIncomesBySource(mockIncomes);
+
+// Ratios financieros
+const savingsRate = (totalSavings / (totalIncome * 12)) * 100; // Tasa de ahorro anual
+const debtToIncomeRatio = (totalDebt / (totalIncome * 12)) * 100;
+const expenseToIncomeRatio = (totalExpenses / totalIncome) * 100;
+
+// Proyecciones anuales
+const annualIncome = totalIncome * 12;
+const annualExpenses = totalExpenses * 12;
+const annualBalance = annualIncome - annualExpenses;
+const projectedSavings = totalSavings + (balance * 12);
+
+// Tendencias (simuladas para el ejemplo)
+const monthlyTrends = [
+  { month: 'Ene', income: 4200, expenses: 3100, savings: 400 },
+  { month: 'Feb', income: 4500, expenses: 3200, savings: 450 },
+  { month: 'Mar', income: 4300, expenses: 3300, savings: 350 },
+  { month: 'Abr', income: 4800, expenses: 3400, savings: 600 },
+  { month: 'May', income: totalIncome, expenses: totalExpenses, savings: 500 },
+];
+
+const categoryLabels = {
+  food: 'Alimentación',
+  transport: 'Transporte',
+  entertainment: 'Entretenimiento',
+  healthcare: 'Salud',
+  education: 'Educación',
+  utilities: 'Servicios',
+  debt: 'Deudas',
+  services: 'Servicios',
+  other: 'Otros'
+};
+
+const sourceLabels = {
+  salary: 'Sueldo',
+  business: 'Negocio',
+  freelance: 'Freelance',
+  investment: 'Inversiones',
+  other: 'Otros'
+};
+---
+
+<Layout title="Reportes - Control de Gastos">
+  <div class="space-y-6">
+    <!-- Título -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Reportes Financieros</h1>
+        <p class="text-gray-600">Análisis detallado de tu situación financiera</p>
+      </div>
+      <div class="flex space-x-3">
+        <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+          Exportar PDF
+        </button>
+        <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+          Generar Reporte
+        </button>
+      </div>
+    </div>
+
+    <!-- Resumen Ejecutivo -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-6">Resumen Ejecutivo</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <FinancialCard
+          title="Salud Financiera"
+          amount={balance >= 0 ? 85 : 45}
+          displayType="number"
+          subtitle="Puntuación general"
+          colorScheme={balance >= 0 ? "success" : "danger"}
+          trend={balance >= 0 ? "up" : "down"}
+          trendValue={balance >= 0 ? "Buena" : "Regular"}
+        />
+        
+        <FinancialCard
+          title="Tasa de Ahorro"
+          amount={savingsRate}
+          displayType="percentage"
+          subtitle="Porcentaje de ingresos"
+          colorScheme={savingsRate >= 20 ? "success" : savingsRate >= 10 ? "warning" : "danger"}
+        />
+        
+        <FinancialCard
+          title="Ratio Deuda/Ingreso"
+          amount={debtToIncomeRatio}
+          displayType="percentage"
+          subtitle="Porcentaje de deuda"
+          colorScheme={debtToIncomeRatio <= 30 ? "success" : debtToIncomeRatio <= 50 ? "warning" : "danger"}
+        />
+        
+        <FinancialCard
+          title="Ratio Gasto/Ingreso"
+          amount={expenseToIncomeRatio}
+          displayType="percentage"
+          subtitle="Porcentaje de gastos"
+          colorScheme={expenseToIncomeRatio <= 70 ? "success" : expenseToIncomeRatio <= 85 ? "warning" : "danger"}
+        />
+      </div>
+    </div>
+
+    <!-- Análisis de Flujo de Caja -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Análisis Mensual vs Anual</h3>
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="text-center p-4 bg-success-50 rounded-lg">
+              <p class="text-2xl font-bold text-success-600">{formatCurrency(totalIncome)}</p>
+              <p class="text-sm text-gray-600">Ingresos mensuales</p>
+            </div>
+            <div class="text-center p-4 bg-primary-50 rounded-lg">
+              <p class="text-2xl font-bold text-primary-600">{formatCurrency(annualIncome)}</p>
+              <p class="text-sm text-gray-600">Proyección anual</p>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div class="text-center p-4 bg-danger-50 rounded-lg">
+              <p class="text-2xl font-bold text-danger-600">{formatCurrency(totalExpenses)}</p>
+              <p class="text-sm text-gray-600">Gastos mensuales</p>
+            </div>
+            <div class="text-center p-4 bg-warning-50 rounded-lg">
+              <p class="text-2xl font-bold text-warning-600">{formatCurrency(annualExpenses)}</p>
+              <p class="text-sm text-gray-600">Proyección anual</p>
+            </div>
+          </div>
+          
+          <div class="text-center p-4 bg-gray-50 rounded-lg">
+            <p class="text-2xl font-bold text-gray-900">{formatCurrency(annualBalance)}</p>
+            <p class="text-sm text-gray-600">Balance anual proyectado</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Tendencia de 5 Meses</h3>
+        <div class="space-y-3">
+          {monthlyTrends.map((trend, index) => (
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <div class="flex items-center space-x-4">
+                <span class="font-medium text-gray-900 w-8">{trend.month}</span>
+                <div class="flex space-x-4 text-sm">
+                  <span class="text-success-600">+{formatCurrency(trend.income)}</span>
+                  <span class="text-danger-600">-{formatCurrency(trend.expenses)}</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class={`font-medium ${(trend.income - trend.expenses) >= 0 ? 'text-success-600' : 'text-danger-600'}`}>
+                  {formatCurrency(trend.income - trend.expenses)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Análisis por Categorías -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Distribución de Gastos</h3>
+        <div class="space-y-3">
+          {Object.entries(expensesByCategory)
+            .sort(([,a], [,b]) => b - a)
+            .map(([category, amount]) => {
+              const percentage = (amount / totalExpenses) * 100;
+              return (
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2" style="width: 200px;">
+                      <div 
+                        class="bg-danger-500 h-2 rounded-full"
+                        style={`width: ${percentage}%`}
+                      ></div>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900 w-24">{categoryLabels[category]}</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="font-medium text-gray-900">{formatCurrency(amount)}</span>
+                    <span class="text-sm text-gray-500 ml-2">{percentage.toFixed(1)}%</span>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Fuentes de Ingreso</h3>
+        <div class="space-y-3">
+          {Object.entries(incomesBySource)
+            .sort(([,a], [,b]) => b - a)
+            .map(([source, amount]) => {
+              const percentage = (amount / totalIncome) * 100;
+              return (
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2" style="width: 200px;">
+                      <div 
+                        class="bg-success-500 h-2 rounded-full"
+                        style={`width: ${percentage}%`}
+                      ></div>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900 w-24">{sourceLabels[source]}</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="font-medium text-gray-900">{formatCurrency(amount)}</span>
+                    <span class="text-sm text-gray-500 ml-2">{percentage.toFixed(1)}%</span>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas de Rendimiento -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-6">Métricas de Rendimiento Financiero</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div class="text-center p-4 border border-gray-200 rounded-lg">
+          <p class="text-sm text-gray-600 mb-2">Liquidez</p>
+          <p class="text-2xl font-bold text-primary-600">{formatCurrency(totalSavings)}</p>
+          <p class="text-xs text-gray-500">Ahorros disponibles</p>
+        </div>
+        
+        <div class="text-center p-4 border border-gray-200 rounded-lg">
+          <p class="text-sm text-gray-600 mb-2">Endeudamiento</p>
+          <p class="text-2xl font-bold text-danger-600">{debtToIncomeRatio.toFixed(1)}%</p>
+          <p class="text-xs text-gray-500">Deuda vs Ingreso</p>
+        </div>
+        
+        <div class="text-center p-4 border border-gray-200 rounded-lg">
+          <p class="text-sm text-gray-600 mb-2">Capacidad de Ahorro</p>
+          <p class="text-2xl font-bold text-success-600">{formatCurrency(balance)}</p>
+          <p class="text-xs text-gray-500">Sobrante mensual</p>
+        </div>
+        
+        <div class="text-center p-4 border border-gray-200 rounded-lg">
+          <p class="text-sm text-gray-600 mb-2">Eficiencia</p>
+          <p class="text-2xl font-bold text-warning-600">{(100 - expenseToIncomeRatio).toFixed(1)}%</p>
+          <p class="text-xs text-gray-500">Eficiencia de gastos</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Recomendaciones Personalizadas</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {savingsRate < 20 && (
+          <div class="p-4 bg-warning-50 border border-warning-200 rounded-lg">
+            <h4 class="font-medium text-warning-800 mb-2">🎯 Incrementar Ahorro</h4>
+            <p class="text-sm text-warning-700">Tu tasa de ahorro es {savingsRate.toFixed(1)}%. Te recomendamos aumentarla al 20% para una mejor salud financiera.</p>
+          </div>
+        )}
+        
+        {debtToIncomeRatio > 30 && (
+          <div class="p-4 bg-danger-50 border border-danger-200 rounded-lg">
+            <h4 class="font-medium text-danger-800 mb-2">⚠️ Reducir Deudas</h4>
+            <p class="text-sm text-danger-700">Tu ratio de deuda es {debtToIncomeRatio.toFixed(1)}%. Considera estrategias para reducir deudas por debajo del 30%.</p>
+          </div>
+        )}
+        
+        {expenseToIncomeRatio > 80 && (
+          <div class="p-4 bg-primary-50 border border-primary-200 rounded-lg">
+            <h4 class="font-medium text-primary-800 mb-2">💡 Optimizar Gastos</h4>
+            <p class="text-sm text-primary-700">Tus gastos representan {expenseToIncomeRatio.toFixed(1)}% de tus ingresos. Busca oportunidades de reducción.</p>
+          </div>
+        )}
+        
+        {balance > 0 && (
+          <div class="p-4 bg-success-50 border border-success-200 rounded-lg">
+            <h4 class="font-medium text-success-800 mb-2">✅ Situación Positiva</h4>
+            <p class="text-sm text-success-700">Tienes un balance positivo de {formatCurrency(balance)}. ¡Sigue así y considera invertir el excedente!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</Layout>

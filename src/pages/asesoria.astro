@@ -1,0 +1,250 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FinancialAdvisor from '../components/FinancialAdvisor.astro';
+import MoneyDistributionSimulator from '../components/MoneyDistributionSimulator.astro';
+import FinancialCard from '../components/FinancialCard.astro';
+import { mockIncomes, mockExpenses, mockSavingsGoals, mockDebts } from '../data/mockData';
+import { createFinancialProfile, generateRecommendations, calculateOptimalDistribution } from '../utils/financialAdvisor';
+import { formatCurrency } from '../utils/currency';
+
+// Crear perfil financiero
+const profile = createFinancialProfile(mockIncomes, mockExpenses, mockSavingsGoals, mockDebts);
+const recommendations = generateRecommendations(profile);
+const optimalDistribution = calculateOptimalDistribution(profile);
+
+// Métricas adicionales
+const monthsToEmergencyFund = profile.hasEmergencyFund ? 0 : Math.ceil((profile.fixedExpenses * 6 - profile.currentSavings) / (profile.availableAmount * 0.3));
+const potentialMonthlySavings = profile.availableAmount * 0.7; // 70% del disponible para ahorro/inversión
+const yearlyProjection = potentialMonthlySavings * 12;
+
+// Simulación de escenarios
+const scenarios = {
+  current: {
+    name: "Situación Actual",
+    monthlySavings: profile.availableAmount * 0.2,
+    yearlyGrowth: profile.availableAmount * 0.2 * 12
+  },
+  optimized: {
+    name: "Con Optimización",
+    monthlySavings: potentialMonthlySavings,
+    yearlyGrowth: yearlyProjection
+  },
+  aggressive: {
+    name: "Estrategia Agresiva",
+    monthlySavings: profile.availableAmount * 0.8,
+    yearlyGrowth: profile.availableAmount * 0.8 * 12
+  }
+};
+---
+
+<Layout title="Asesoría Financiera - Control de Gastos">
+  <div class="space-y-6">
+    <!-- Título -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Asesoría Financiera Inteligente</h1>
+        <p class="text-gray-600">Análisis personalizado y recomendaciones para optimizar tus finanzas</p>
+      </div>
+      <div class="flex space-x-3">
+        <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+          📊 Generar Reporte
+        </button>
+        <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+          🤖 Actualizar Análisis
+        </button>
+      </div>
+    </div>
+
+    <!-- Resumen de Situación Financiera -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <FinancialCard
+        title="Dinero Disponible"
+        amount={profile.availableAmount}
+        subtitle="Después de gastos fijos"
+        icon='<path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>'
+        colorScheme={profile.availableAmount > 0 ? "success" : "danger"}
+        trend={profile.availableAmount > 0 ? "up" : "down"}
+        trendValue={profile.availableAmount > 0 ? "Positivo" : "Déficit"}
+      />
+      
+      <FinancialCard
+        title="Potencial de Ahorro"
+        amount={potentialMonthlySavings}
+        subtitle="70% del disponible"
+        icon='<path d="M13 10V3L4 14h7v7l9-11h-7z"/>'
+        colorScheme="primary"
+        trend="up"
+        trendValue={`${formatCurrency(yearlyProjection)} anual`}
+      />
+      
+      <FinancialCard
+        title="Salud Financiera"
+        amount={profile.hasEmergencyFund && !profile.hasHighInterestDebt ? 90 : profile.hasEmergencyFund || !profile.hasHighInterestDebt ? 70 : 45}
+        displayType="number"
+        subtitle="Puntuación general"
+        icon='<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+        colorScheme={profile.hasEmergencyFund && !profile.hasHighInterestDebt ? "success" : "warning"}
+      />
+      
+      <FinancialCard
+        title="Perfil de Riesgo"
+        amount={profile.riskProfile === 'conservative' ? 1 : profile.riskProfile === 'moderate' ? 2 : 3}
+        displayType="number"
+        subtitle={profile.riskProfile === 'conservative' ? 'Conservador' : profile.riskProfile === 'moderate' ? 'Moderado' : 'Agresivo'}
+        icon='<path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>'
+        colorScheme="primary"
+      />
+    </div>
+
+    <!-- Asesor Financiero IA -->
+    <FinancialAdvisor profile={profile} recommendations={recommendations} />
+
+    <!-- Simulador de Distribución -->
+    <MoneyDistributionSimulator 
+      availableAmount={profile.availableAmount}
+      currentSavings={profile.currentSavings}
+      monthlyDebtPayments={profile.monthlyDebtPayments}
+    />
+
+    <!-- Proyecciones y Escenarios -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Proyección de Escenarios</h3>
+        <div class="space-y-4">
+          {Object.entries(scenarios).map(([key, scenario]) => (
+            <div class="p-4 bg-gray-50 rounded-lg">
+              <div class="flex justify-between items-center mb-2">
+                <h4 class="font-medium text-gray-900">{scenario.name}</h4>
+                <span class={`px-2 py-1 text-xs font-medium rounded-full ${
+                  key === 'current' ? 'bg-gray-100 text-gray-800' :
+                  key === 'optimized' ? 'bg-primary-100 text-primary-800' :
+                  'bg-success-100 text-success-800'
+                }`}>
+                  {key === 'current' ? 'Actual' : key === 'optimized' ? 'Recomendado' : 'Máximo'}
+                </span>
+              </div>
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p class="text-gray-600">Ahorro mensual</p>
+                  <p class="font-semibold text-gray-900">{formatCurrency(scenario.monthlySavings)}</p>
+                </div>
+                <div>
+                  <p class="text-gray-600">Crecimiento anual</p>
+                  <p class="font-semibold text-success-600">{formatCurrency(scenario.yearlyGrowth)}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Metas Específicas para tu Situación</h3>
+        <div class="space-y-4">
+          <div class="p-4 bg-warning-50 border border-warning-200 rounded-lg">
+            <h4 class="font-medium text-warning-800 mb-2">🏠 Situación de Vivienda</h4>
+            <p class="text-sm text-warning-700 mb-2">
+              Estás pagando alquiler ({formatCurrency(900)}) y cuota de departamento. 
+              Una vez que te mudes, liberarás {formatCurrency(900)} mensuales adicionales.
+            </p>
+            <p class="text-xs text-warning-600">
+              Impacto: +{formatCurrency(900 * 12)} anuales una vez completada la mudanza
+            </p>
+          </div>
+          
+          <div class="p-4 bg-primary-50 border border-primary-200 rounded-lg">
+            <h4 class="font-medium text-primary-800 mb-2">💳 Optimización de Deudas</h4>
+            <p class="text-sm text-primary-700 mb-2">
+              Tienes {formatCurrency(profile.totalDebt)} en deudas. 
+              Pagando {formatCurrency(profile.monthlyDebtPayments * 1.5)} mensuales en lugar de {formatCurrency(profile.monthlyDebtPayments)}, 
+              podrías liberarte de deudas más rápido.
+            </p>
+            <p class="text-xs text-primary-600">
+              Ahorro estimado en intereses: {formatCurrency(profile.totalDebt * 0.15)}
+            </p>
+          </div>
+          
+          <div class="p-4 bg-success-50 border border-success-200 rounded-lg">
+            <h4 class="font-medium text-success-800 mb-2">📈 Potencial de Crecimiento</h4>
+            <p class="text-sm text-success-700 mb-2">
+              Con tu perfil de ingresos ({formatCurrency(profile.totalIncome)} mensuales), 
+              tienes potencial para ahorrar {formatCurrency(potentialMonthlySavings)} mensuales.
+            </p>
+            <p class="text-xs text-success-600">
+              En 5 años podrías acumular: {formatCurrency(potentialMonthlySavings * 12 * 5)}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plan de Acción Personalizado -->
+    <div class="bg-gradient-to-r from-primary-50 to-success-50 rounded-xl border border-primary-200 p-6">
+      <div class="flex items-center mb-4">
+        <div class="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center mr-3">
+          <span class="text-white text-xl">🎯</span>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Plan de Acción de 90 Días</h3>
+          <p class="text-sm text-gray-600">Pasos concretos para optimizar tu situación financiera</p>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-4 rounded-lg border border-gray-200">
+          <h4 class="font-medium text-gray-900 mb-3">🚀 Primeros 30 días</h4>
+          <ul class="text-sm text-gray-700 space-y-2">
+            <li class="flex items-start">
+              <span class="text-primary-600 mr-2">•</span>
+              <span>Abrir cuenta separada para fondo de emergencia</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-primary-600 mr-2">•</span>
+              <span>Automatizar transferencia de {formatCurrency(profile.availableAmount * 0.3)}</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-primary-600 mr-2">•</span>
+              <span>Revisar y optimizar gastos variables</span>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="bg-white p-4 rounded-lg border border-gray-200">
+          <h4 class="font-medium text-gray-900 mb-3">⚡ Días 31-60</h4>
+          <ul class="text-sm text-gray-700 space-y-2">
+            <li class="flex items-start">
+              <span class="text-warning-600 mr-2">•</span>
+              <span>Implementar pago extra en deuda de mayor interés</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-warning-600 mr-2">•</span>
+              <span>Evaluar progreso del fondo de emergencia</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-warning-600 mr-2">•</span>
+              <span>Investigar opciones de inversión</span>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="bg-white p-4 rounded-lg border border-gray-200">
+          <h4 class="font-medium text-gray-900 mb-3">🎯 Días 61-90</h4>
+          <ul class="text-sm text-gray-700 space-y-2">
+            <li class="flex items-start">
+              <span class="text-success-600 mr-2">•</span>
+              <span>Comenzar inversiones con {formatCurrency(profile.availableAmount * 0.15)}</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-success-600 mr-2">•</span>
+              <span>Revisar progreso general y ajustar estrategia</span>
+            </li>
+            <li class="flex items-start">
+              <span class="text-success-600 mr-2">•</span>
+              <span>Planificar mudanza al departamento propio</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,58 @@
+---
+import { calculateSavingsProgress } from '../utils/calculations';
+import { formatCurrency } from '../utils/currency';
+import type { SavingsGoal } from '../types/financial';
+
+interface Props {
+  goal: SavingsGoal;
+}
+
+const { goal } = Astro.props;
+const progress = calculateSavingsProgress(goal);
+const remaining = goal.targetAmount - goal.currentAmount;
+
+const priorityColors = {
+  high: 'border-danger-200 bg-danger-50',
+  medium: 'border-warning-200 bg-warning-50',
+  low: 'border-success-200 bg-success-50'
+};
+
+const priorityLabels = {
+  high: 'Alta',
+  medium: 'Media',
+  low: 'Baja'
+};
+---
+
+<div class={`p-6 rounded-xl border-2 ${priorityColors[goal.priority]} transition-all hover:shadow-lg`}>
+  <div class="flex justify-between items-start mb-4">
+    <div>
+      <h3 class="text-lg font-semibold text-gray-900">{goal.name}</h3>
+      <span class="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full mt-1">
+        Prioridad {priorityLabels[goal.priority]}
+      </span>
+    </div>
+    <div class="text-right">
+      <p class="text-2xl font-bold text-gray-900">{formatCurrency(goal.currentAmount)}</p>
+      <p class="text-sm text-gray-500">de {formatCurrency(goal.targetAmount)}</p>
+    </div>
+  </div>
+  
+  <div class="mb-4">
+    <div class="flex justify-between text-sm text-gray-600 mb-2">
+      <span>Progreso</span>
+      <span>{progress.toFixed(1)}%</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-3">
+      <div 
+        class="bg-primary-600 h-3 rounded-full transition-all duration-300"
+        style={`width: ${Math.min(progress, 100)}%`}
+      ></div>
+    </div>
+  </div>
+  
+  <div class="flex justify-between items-center text-sm">
+    <span class="text-gray-600">Falta: {formatCurrency(remaining)}</span>
+    <span class="text-gray-600">Meta: {new Date(goal.targetDate).toLocaleDateString('es-PE')}</span>
+  </div>
+</div>

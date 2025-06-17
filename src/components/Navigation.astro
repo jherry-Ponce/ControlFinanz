@@ -1,0 +1,61 @@
+---
+const currentPath = Astro.url.pathname;
+
+const navItems = [
+  { name: 'Dashboard', href: '/', icon: 'home' },
+  { name: 'Ingresos', href: '/ingresos', icon: 'plus' },
+  { name: 'Gastos', href: '/gastos', icon: 'minus' },
+  { name: 'Ahorros', href: '/ahorros', icon: 'piggy-bank' },
+  { name: 'Deudas', href: '/deudas', icon: 'credit-card' },
+  { name: 'Asesoría IA', href: '/asesoria', icon: 'brain' },
+  { name: 'Reportes', href: '/reportes', icon: 'chart' }
+];
+
+function getIconSVG(iconName: string) {
+  const icons = {
+    home: '<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>',
+    plus: '<path d="M12 4v16m8-8H4"/>',
+    minus: '<path d="M20 12H4"/>',
+    'piggy-bank': '<path d="M17 8h1a1 1 0 011 1v2a1 1 0 01-1 1h-1m-4-4.5v7"/>',
+    'credit-card': '<path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>',
+    brain: '<path d="M9.5 2A2.5 2.5 0 0 0 7 4.5v.319c-.837.162-1.518.756-1.518 1.681 0 .924.681 1.519 1.518 1.681V10.5A2.5 2.5 0 0 0 9.5 13h5a2.5 2.5 0 0 0 2.5-2.5V8.181c.837-.162 1.518-.757 1.518-1.681 0-.925-.681-1.52-1.518-1.681V4.5A2.5 2.5 0 0 0 14.5 2h-5z"/>',
+    chart: '<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>'
+  };
+  return icons[iconName] || icons.home;
+}
+---
+
+<nav class="bg-white border-r border-gray-200 w-64 min-h-screen">
+  <div class="p-4">
+    <ul class="space-y-2">
+      {navItems.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+              currentPath === item.href
+                ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <Fragment set:html={getIconSVG(item.icon)} />
+            </svg>
+            <span class="font-medium">{item.name}</span>
+            {item.name === 'Asesoría IA' && (
+              <span class="ml-auto bg-primary-100 text-primary-600 text-xs px-2 py-1 rounded-full font-medium">
+                IA
+              </span>
+            )}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</nav>

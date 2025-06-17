@@ -1,0 +1,192 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SavingsGoalCard from '../components/SavingsGoalCard.astro';
+import FinancialCard from '../components/FinancialCard.astro';
+import { mockSavingsGoals } from '../data/mockData';
+import { calculateTotalSavings, calculateSavingsProgress } from '../utils/calculations';
+import { formatCurrency } from '../utils/currency';
+
+const totalSavings = calculateTotalSavings(mockSavingsGoals);
+const totalTarget = mockSavingsGoals.reduce((sum, goal) => sum + goal.targetAmount, 0);
+const overallProgress = (totalSavings / totalTarget) * 100;
+
+const priorityGoals = {
+  high: mockSavingsGoals.filter(goal => goal.priority === 'high'),
+  medium: mockSavingsGoals.filter(goal => goal.priority === 'medium'),
+  low: mockSavingsGoals.filter(goal => goal.priority === 'low')
+};
+
+const categoryLabels = {
+  emergency: 'Emergencia',
+  vacation: 'Vacaciones',
+  house: 'Casa',
+  car: 'Vehículo',
+  education: 'Educación',
+  investment: 'Inversión',
+  other: 'Otros'
+};
+
+// Cálculo de proyecciones
+const monthlyIncome = 4800; // Ejemplo de ingreso mensual
+const recommendedSavingsRate = 0.20; // 20% de ahorro recomendado
+const recommendedMonthlySavings = monthlyIncome * recommendedSavingsRate;
+const currentMonthlySavings = 600; // Estimado basado en progreso
+---
+
+<Layout title="Ahorros - Control de Gastos">
+  <div class="space-y-6">
+    <!-- Título -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Gestión de Ahorros</h1>
+        <p class="text-gray-600">Administra tus metas de ahorro y seguimiento</p>
+      </div>
+      <button class="bg-success-600 hover:bg-success-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+        + Nueva Meta
+      </button>
+    </div>
+
+    <!-- Resumen de Ahorros -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <FinancialCard
+        title="Total Ahorrado"
+        amount={totalSavings}
+        subtitle="Suma de todos los ahorros"
+        icon='<path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>'
+        colorScheme="success"
+        trend="up"
+        trendValue="+12.4%"
+      />
+      
+      <FinancialCard
+        title="Meta Total"
+        amount={totalTarget}
+        subtitle="Suma de todas las metas"
+        icon='<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+        colorScheme="primary"
+      />
+      
+      <FinancialCard
+        title="Progreso General"
+        amount={overallProgress}
+        displayType="percentage"
+        subtitle="Porcentaje completado"
+        icon='<path d="M13 10V3L4 14h7v7l9-11h-7z"/>'
+        colorScheme="warning"
+      />
+      
+      <FinancialCard
+        title="Ahorro Mensual"
+        amount={currentMonthlySavings}
+        subtitle="Promedio mensual actual"
+        icon='<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>'
+        colorScheme="success"
+      />
+    </div>
+
+    <!-- Metas de Ahorro por Prioridad -->
+    <div class="space-y-6">
+      {['high', 'medium', 'low'].map((priority) => {
+        const priorityLabel = priority === 'high' ? 'Alta Prioridad' : priority === 'medium' ? 'Media Prioridad' : 'Baja Prioridad';
+        const priorityColor = priority === 'high' ? 'text-danger-600' : priority === 'medium' ? 'text-warning-600' : 'text-success-600';
+        const goals = priorityGoals[priority];
+        
+        if (goals.length === 0) return null;
+        
+        return (
+          <div>
+            <h2 class={`text-xl font-semibold mb-4 ${priorityColor}`}>{priorityLabel}</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {goals.map((goal) => (
+                <SavingsGoalCard goal={goal} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    <!-- Análisis de Ahorro -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Análisis de Ahorro</h3>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Tasa de ahorro actual</span>
+            <span class="font-bold text-success-600">{((currentMonthlySavings / monthlyIncome) * 100).toFixed(1)}%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Tasa recomendada</span>
+            <span class="font-bold text-primary-600">20%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Diferencia</span>
+            <span class={`font-bold ${currentMonthlySavings >= recommendedMonthlySavings ? 'text-success-600' : 'text-danger-600'}`}>
+              {formatCurrency(Math.abs(currentMonthlySavings - recommendedMonthlySavings))}
+            </span>
+          </div>
+        </div>
+        
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+          <p class="text-sm text-gray-600">
+            {currentMonthlySavings >= recommendedMonthlySavings 
+              ? "¡Excelente! Estás ahorrando más de lo recomendado."
+              : `Para alcanzar el 20% recomendado, necesitas ahorrar ${formatCurrency(recommendedMonthlySavings - currentMonthlySavings)} adicionales por mes.`
+            }
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Proyección de Cumplimiento</h3>
+        <div class="space-y-4">
+          {mockSavingsGoals.map((goal) => {
+            const progress = calculateSavingsProgress(goal);
+            const remaining = goal.targetAmount - goal.currentAmount;
+            const monthsToTarget = Math.ceil(remaining / currentMonthlySavings);
+            const targetDate = new Date(goal.targetDate);
+            const today = new Date();
+            const monthsUntilTarget = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
+            
+            return (
+              <div class="p-3 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-medium text-gray-900">{goal.name}</span>
+                  <span class={`text-sm font-medium ${monthsToTarget <= monthsUntilTarget ? 'text-success-600' : 'text-danger-600'}`}>
+                    {monthsToTarget <= monthsUntilTarget ? 'A tiempo' : 'Retrasado'}
+                  </span>
+                </div>
+                <div class="text-sm text-gray-600">
+                  <p>Progreso: {progress.toFixed(1)}% • Faltan {monthsToTarget} meses al ritmo actual</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+
+    <!-- Consejos de Ahorro -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Consejos para Mejorar tu Ahorro</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-4 bg-success-50 border border-success-200 rounded-lg">
+          <h4 class="font-medium text-success-800 mb-2">Automatiza tus ahorros</h4>
+          <p class="text-sm text-success-700">Configura transferencias automáticas a tu cuenta de ahorros el día que recibes tu sueldo.</p>
+        </div>
+        <div class="p-4 bg-primary-50 border border-primary-200 rounded-lg">
+          <h4 class="font-medium text-primary-800 mb-2">Regla 50/30/20</h4>
+          <p class="text-sm text-primary-700">50% gastos esenciales, 30% gastos personales, 20% ahorros e inversiones.</p>
+        </div>
+        <div class="p-4 bg-warning-50 border border-warning-200 rounded-lg">
+          <h4 class="font-medium text-warning-800 mb-2">Revisa gastos variables</h4>
+          <p class="text-sm text-warning-700">Identifica gastos innecesarios en entretenimiento y comida para incrementar tu ahorro.</p>
+        </div>
+        <div class="p-4 bg-danger-50 border border-danger-200 rounded-lg">
+          <h4 class="font-medium text-danger-800 mb-2">Fondo de emergencia</h4>
+          <p class="text-sm text-danger-700">Prioriza tener 3-6 meses de gastos en un fondo de emergencia antes de otras metas.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

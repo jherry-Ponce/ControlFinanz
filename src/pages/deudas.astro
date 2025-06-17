@@ -1,0 +1,188 @@
+---
+import Layout from '../layouts/Layout.astro';
+import DebtCard from '../components/DebtCard.astro';
+import FinancialCard from '../components/FinancialCard.astro';
+import { mockDebts } from '../data/mockData';
+import { calculateDebtPayoffMonths } from '../utils/calculations';
+import { formatCurrency } from '../utils/currency';
+
+const totalDebt = mockDebts.reduce((sum, debt) => sum + debt.remainingAmount, 0);
+const totalMonthlyPayments = mockDebts.reduce((sum, debt) => sum + debt.monthlyPayment, 0);
+const averageInterestRate = mockDebts.reduce((sum, debt) => sum + debt.interestRate, 0) / mockDebts.length;
+
+// Calcular tiempo promedio para pagar todas las deudas
+const averagePayoffMonths = mockDebts.reduce((sum, debt) => sum + calculateDebtPayoffMonths(debt), 0) / mockDebts.length;
+
+// Estrategias de pago
+const snowballStrategy = [...mockDebts].sort((a, b) => a.remainingAmount - b.remainingAmount);
+const avalancheStrategy = [...mockDebts].sort((a, b) => b.interestRate - a.interestRate);
+
+// Simulación de pago adicional
+const additionalPayment = 200;
+const totalInterestSaved = mockDebts.reduce((sum, debt) => {
+  const normalMonths = calculateDebtPayoffMonths(debt);
+  const acceleratedMonths = calculateDebtPayoffMonths({
+    ...debt,
+    monthlyPayment: debt.monthlyPayment + (additionalPayment / mockDebts.length)
+  });
+  const interestSaved = (normalMonths - acceleratedMonths) * debt.monthlyPayment * (debt.interestRate / 100 / 12);
+  return sum + interestSaved;
+}, 0);
+---
+
+<Layout title="Deudas - Control de Gastos">
+  <div class="space-y-6">
+    <!-- Título -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Gestión de Deudas</h1>
+        <p class="text-gray-600">Controla y optimiza el pago de tus deudas</p>
+      </div>
+      <button class="bg-danger-600 hover:bg-danger-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+        + Nueva Deuda
+      </button>
+    </div>
+
+    <!-- Resumen de Deudas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <FinancialCard
+        title="Deuda Total"
+        amount={totalDebt}
+        subtitle="Suma de todas las deudas"
+        icon='<path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>'
+        colorScheme="danger"
+        trend="down"
+        trendValue="-5.2%"
+      />
+      
+      <FinancialCard
+        title="Pago Mensual"
+        amount={totalMonthlyPayments}
+        subtitle="Suma de pagos mínimos"
+        icon='<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>'
+        colorScheme="warning"
+      />
+      
+      <FinancialCard
+        title="Interés Promedio"
+        amount={averageInterestRate}
+        displayType="percentage"
+        subtitle="Tasa promedio mensual"
+        icon='<path d="M13 10V3L4 14h7v7l9-11h-7z"/>'
+        colorScheme="primary"
+      />
+      
+      <FinancialCard
+        title="Tiempo Promedio"
+        amount={averagePayoffMonths}
+        displayType="number"
+        subtitle="Meses para liquidar"
+        icon='<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+        colorScheme="primary"
+      />
+    </div>
+
+    <!-- Lista de Deudas -->
+    <div>
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Deudas Actuales</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {mockDebts.map((debt) => (
+          <DebtCard debt={debt} />
+        ))}
+      </div>
+    </div>
+
+    <!-- Estrategias de Pago -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Estrategia Bola de Nieve</h3>
+        <p class="text-sm text-gray-600 mb-4">Paga primero las deudas más pequeñas para ganar momentum psicológico.</p>
+        <div class="space-y-3">
+          {snowballStrategy.map((debt, index) => (
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p class="font-medium text-gray-900">{index + 1}. {debt.creditorName}</p>
+                <p class="text-sm text-gray-600">{formatCurrency(debt.remainingAmount)}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm font-medium text-gray-900">{calculateDebtPayoffMonths(debt)} meses</p>
+                <p class="text-xs text-gray-500">{debt.interestRate}% interés</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Estrategia Avalancha</h3>
+        <p class="text-sm text-gray-600 mb-4">Paga primero las deudas con mayor interés para ahorrar más dinero.</p>
+        <div class="space-y-3">
+          {avalancheStrategy.map((debt, index) => (
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p class="font-medium text-gray-900">{index + 1}. {debt.creditorName}</p>
+                <p class="text-sm text-gray-600">{formatCurrency(debt.remainingAmount)}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm font-medium text-danger-600">{debt.interestRate}% interés</p>
+                <p class="text-xs text-gray-500">{calculateDebtPayoffMonths(debt)} meses</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Simulador de Pagos Adicionales -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Simulador de Pagos Adicionales</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="text-center">
+          <p class="text-2xl font-bold text-primary-600">{formatCurrency(additionalPayment)}</p>
+          <p class="text-sm text-gray-600">Pago adicional mensual</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-success-600">{formatCurrency(totalInterestSaved)}</p>
+          <p class="text-sm text-gray-600">Ahorro en intereses</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-warning-600">
+            {Math.floor(averagePayoffMonths - (averagePayoffMonths * 0.3))} meses
+          </p>
+          <p class="text-sm text-gray-600">Tiempo reducido</p>
+        </div>
+      </div>
+      
+      <div class="mt-6 p-4 bg-success-50 border border-success-200 rounded-lg">
+        <p class="text-sm text-success-700">
+          <strong>Consejo:</strong> Pagando {formatCurrency(additionalPayment)} extra por mes, podrías ahorrar 
+          {formatCurrency(totalInterestSaved)} en intereses y liberarte de deudas aproximadamente 
+          {Math.floor(averagePayoffMonths * 0.3)} meses antes.
+        </p>
+      </div>
+    </div>
+
+    <!-- Consejos para Manejo de Deudas -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Consejos para Manejar Deudas</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-4 bg-danger-50 border border-danger-200 rounded-lg">
+          <h4 class="font-medium text-danger-800 mb-2">Evita el mínimo</h4>
+          <p class="text-sm text-danger-700">Pagar solo el mínimo puede extender tu deuda por años. Siempre trata de pagar más cuando sea posible.</p>
+        </div>
+        <div class="p-4 bg-warning-50 border border-warning-200 rounded-lg">
+          <h4 class="font-medium text-warning-800 mb-2">Consolida deudas</h4>
+          <p class="text-sm text-warning-700">Considera consolidar deudas de alto interés en un préstamo con tasa más baja.</p>
+        </div>
+        <div class="p-4 bg-primary-50 border border-primary-200 rounded-lg">
+          <h4 class="font-medium text-primary-800 mb-2">Negocia con acreedores</h4>
+          <p class="text-sm text-primary-700">Si tienes dificultades, contacta a tus acreedores para negociar planes de pago más flexibles.</p>
+        </div>
+        <div class="p-4 bg-success-50 border border-success-200 rounded-lg">
+          <h4 class="font-medium text-success-800 mb-2">Celebra los logros</h4>
+          <p class="text-sm text-success-700">Cada deuda pagada es un logro importante. Reconoce tu progreso para mantenerte motivado.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

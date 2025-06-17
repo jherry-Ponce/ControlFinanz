@@ -1,0 +1,86 @@
+---
+interface Props {
+  title: string;
+  amount: number;
+  currency?: string;
+  subtitle?: string;
+  icon?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  trendValue?: string;
+  colorScheme?: 'primary' | 'success' | 'danger' | 'warning';
+  displayType?: 'currency' | 'percentage' | 'number';
+}
+
+const { 
+  title, 
+  amount, 
+  currency = 'PEN', 
+  subtitle, 
+  icon, 
+  trend, 
+  trendValue,
+  colorScheme = 'primary',
+  displayType = 'currency'
+} = Astro.props;
+
+const colorClasses = {
+  primary: 'bg-primary-50 text-primary-600 border-primary-200',
+  success: 'bg-success-50 text-success-600 border-success-200',
+  danger: 'bg-danger-50 text-danger-600 border-danger-200',
+  warning: 'bg-warning-50 text-warning-600 border-warning-200'
+};
+
+const trendClasses = {
+  up: 'text-success-600',
+  down: 'text-danger-600',
+  neutral: 'text-gray-500'
+};
+
+function formatAmount(amount: number, type: string): string {
+  switch (type) {
+    case 'currency':
+      return new Intl.NumberFormat('es-PE', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(amount);
+    case 'percentage':
+      return `${amount.toFixed(1)}%`;
+    case 'number':
+      return amount.toFixed(0);
+    default:
+      return amount.toString();
+  }
+}
+---
+
+<div class={`p-6 rounded-xl border-2 ${colorClasses[colorScheme]} transition-all hover:shadow-lg`}>
+  <div class="flex items-center justify-between">
+    <div class="flex-1">
+      <p class="text-sm font-medium text-gray-600 mb-1">{title}</p>
+      <p class="text-2xl font-bold text-gray-900">{formatAmount(amount, displayType)}</p>
+      {subtitle && (
+        <p class="text-sm text-gray-500 mt-1">{subtitle}</p>
+      )}
+    </div>
+    
+    {icon && (
+      <div class={`w-12 h-12 rounded-lg flex items-center justify-center ${colorClasses[colorScheme]}`}>
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <Fragment set:html={icon} />
+        </svg>
+      </div>
+    )}
+  </div>
+  
+  {trend && trendValue && (
+    <div class="flex items-center mt-4">
+      <svg class={`w-4 h-4 mr-1 ${trendClasses[trend]}`} fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        {trend === 'up' && <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>}
+        {trend === 'down' && <path d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>}
+        {trend === 'neutral' && <path d="M20 12H4"/>}
+      </svg>
+      <span class={`text-sm font-medium ${trendClasses[trend]}`}>{trendValue}</span>
+    </div>
+  )}
+</div>

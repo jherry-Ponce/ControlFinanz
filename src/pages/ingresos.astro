@@ -1,0 +1,142 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FinancialCard from '../components/FinancialCard.astro';
+import { mockIncomes } from '../data/mockData';
+import { calculateTotalIncome, getIncomesBySource } from '../utils/calculations';
+import { formatCurrency } from '../utils/currency';
+
+const totalIncome = calculateTotalIncome(mockIncomes);
+const incomesBySource = getIncomesBySource(mockIncomes);
+
+const sourceLabels = {
+  salary: 'Sueldo',
+  business: 'Negocio',
+  freelance: 'Freelance',
+  investment: 'Inversiones',
+  other: 'Otros'
+};
+
+const sourceColors = {
+  salary: 'success',
+  business: 'primary',
+  freelance: 'warning',
+  investment: 'danger',
+  other: 'primary'
+} as const;
+---
+
+<Layout title="Ingresos - Control de Gastos">
+  <div class="space-y-6">
+    <!-- Título -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Gestión de Ingresos</h1>
+        <p class="text-gray-600">Administra tus fuentes de ingreso mensual</p>
+      </div>
+      <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+        + Nuevo Ingreso
+      </button>
+    </div>
+
+    <!-- Resumen de Ingresos -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <FinancialCard
+        title="Total Ingresos"
+        amount={totalIncome}
+        subtitle="Suma de todos los ingresos"
+        icon='<path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>'
+        colorScheme="success"
+        trend="up"
+        trendValue="+8.2%"
+      />
+      
+      {Object.entries(incomesBySource).map(([source, amount]) => (
+        <FinancialCard
+          title={sourceLabels[source]}
+          amount={amount}
+          subtitle={`${((amount / totalIncome) * 100).toFixed(1)}% del total`}
+          colorScheme={sourceColors[source]}
+        />
+      ))}
+    </div>
+
+    <!-- Lista de Ingresos -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div class="p-6 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Historial de Ingresos</h3>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Descripción
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Fuente
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Monto
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Fecha
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tipo
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            {mockIncomes.map((income) => (
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{income.description}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-${sourceColors[income.source]}-100 text-${sourceColors[income.source]}-800`}>
+                    {sourceLabels[income.source]}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {formatCurrency(income.amount)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {new Date(income.date).toLocaleDateString('es-PE')}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    income.isRecurring 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {income.isRecurring ? 'Recurrente' : 'Único'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Proyección de Ingresos -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Proyección Mensual</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="text-center">
+          <p class="text-2xl font-bold text-success-600">{formatCurrency(totalIncome)}</p>
+          <p class="text-sm text-gray-600">Ingresos actuales</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-primary-600">{formatCurrency(totalIncome * 1.08)}</p>
+          <p class="text-sm text-gray-600">Proyección (+8%)</p>
+        </div>
+        <div class="text-center">
+          <p class="text-2xl font-bold text-gray-900">{formatCurrency(totalIncome * 12)}</p>
+          <p class="text-sm text-gray-600">Proyección anual</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
